@@ -37,8 +37,8 @@ A modern, web-based process manager for PM2. It provides an elegant and user-fri
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/pm2panel.git
-cd pm2panel
+https://github.com/SterTheStar/fluxpanel.git
+cd fluxpanel
 ```
 
 2. Install dependencies:
@@ -136,7 +136,7 @@ The following environment variables can be configured:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Acknowledgements
+## 🙌 Acknowledgements
 
 This project was inspired by and partially based on the work of [4xmen/pm2panel](https://github.com/4xmen/pm2panel).  
 Special thanks to the original creators for their excellent work, which served as a foundation and reference for several parts of this panel.
