@@ -150,4 +150,4 @@ This project is licensed under the GNU General Public v3.0 License
 
 ---
 
-Made with ❤️ by Esther (Vênus)
+Made with ❤️ by [Esther (Vênus)](https://x.com/onlysterbr)
