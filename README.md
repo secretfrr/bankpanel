@@ -143,6 +143,9 @@ Special thanks to the original creators for their excellent work, which served a
 
 Please consider visiting their repository and supporting their project!
 
+## 💖 Support
+
+If you like this project and find it useful, consider supporting it with a donation on [Ko-Fi](https://ko-fi.com/venusbr). Every little bit helps and is greatly appreciated!
 
 ## 📄 License
 
