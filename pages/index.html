@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux Panel | Process Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="/src/css/normalize.css" />
+    <link type="text/css" rel="stylesheet" href="/src/css/dark-theme.css" />
+    <script type="text/javascript" src="/src/js/vue.js"></script>
+    <script type="text/javascript" src="/src/js/jquery.min.js"></script>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Modernized Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>
+                    <i class="fas fa-microchip"></i>
+                    <span>Flux Panel</span>
+                </h2>
+            </div>
+            <div class="sidebar-menu">
+                <ul>
+                    <li>
+                        <a href="#" id="frmCrtl" :class="{ active: showAddForm }">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Process</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dump">
+                            <i class="fas fa-save"></i>
+                            <span>Save All</span>
+                        </a>
+                    </li>
+                    <li v-if="isAdmin">
+                        <a href="#" @click.prevent="showSettings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/SterTheStar" target="_blank">
+                            <i class="fab fa-github"></i>
+                            <span>GitHub</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="user-info">
+                    <div class="user-profile" v-if="currentUser">
+                        <div class="user-badge">
+                            <div class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="username">{{currentUser.username}}</div>
+                                <div class="role-badge" :class="{'role-admin': currentUser.role === 'admin'}">
+                                    {{currentUser.role}}
+                                </div>
+                            </div>
+                            <a href="/logout" class="signout-btn" title="Sign Out">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Process Manager</h1>
+                <div class="header-actions">
+                    <div class="system-stats">
+                        <!-- Loading State -->
+                        <div id="loader" class="stat-item" style="display: none;">
+                            <i class="fas fa-sync-alt fa-spin"></i>
+                            <span>Loading processes...</span>
+                        </div>
+                        <span class="stat-item" v-if="systemStats">
+                            <i class="fas fa-microchip"></i>
+                            CPU: {{systemStats.cpu}}%
+                        </span>
+                        <span class="stat-item" v-if="systemStats">
+                            <i class="fas fa-memory"></i>
+                            RAM: {{systemStats.memory}}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div id="notification" class="notification" :class="notificationClass" style="display: none;">
+                <i class="notification-icon" :class="notificationIcon"></i>
+                <div class="notification-content">
+                    <div class="notification-message"></div>
+                </div>
+                <span class="notification-close">
+                    <i class="fas fa-times"></i>
+                </span>
+            </div>
+
+            <!-- Process Form -->
+            <div class="card add-process-card" id="addForm" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-plus"></i>
+                        Add New Process
+                    </h3>
+                    <button class="btn btn-icon" @click="closeAddForm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form @submit.prevent="addProcess" class="add-process-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="processName">
+                                <i class="fas fa-tag"></i>
+                                Process Name
+                            </label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       id="processName" 
+                                       name="processName" 
+                                       v-model="processName" 
+                                       placeholder="Enter process name (optional)">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="path">
+                                <i class="fas fa-file-code"></i>
+                                Process Path
+                            </label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       id="path" 
+                                       name="path" 
+                                       v-model="choosedPath" 
+                                       placeholder="Enter full path">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-cog"></i>
+                                Process Options
+                            </label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       v-model="processArgs" 
+                                       placeholder="Command line arguments">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play"></i>
+                            Start Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Process List -->
+            <div class="card process-list">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i>
+                        Running Processes
+                    </h3>
+                    <div class="card-actions">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" v-model="searchQuery" placeholder="Search processes...">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>CPU</th>
+                                <th>Memory</th>
+                                <th>Uptime</th>
+                                <th>Restarts</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="process in filteredProcesses" :key="process.pm_id">
+                                <td>
+                                    <div class="process-name">
+                                        <i class="fas" :class="getProcessIcon(process)"></i>
+                                        {{ process.name }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge" :class="getStatusClass(process)">
+                                        {{ process.pm2_env?.status || 'unknown' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge" :class="getCPUClass(process.monit?.cpu)">
+                                        {{ formatCPU(process.monit?.cpu) }}%
+                                    </span>
+                                </td>
+                                <td>{{ formatMemory(process.monit?.memory || 0) }}</td>
+                                <td>{{ formatUptime(process.pm2_env?.pm_uptime) }}</td>
+                                <td>
+                                    <span class="badge" :class="getRestartClass(process.pm2_env?.restart_time || 0)">
+                                        {{ process.pm2_env?.restart_time || 0 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-icon" 
+                                                :class="getActionButtonClass(process)"
+                                                @click="toggleProcess(process)">
+                                            <i class="fas" :class="getActionIcon(process)"></i>
+                                        </button>
+                                        <button class="btn btn-icon btn-warning" 
+                                                @click="restartProcess(process)">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                        <button class="btn btn-icon" 
+                                                @click="viewLogs(process)">
+                                            <i class="fas fa-file-alt"></i>
+                                        </button>
+                                        <button class="btn btn-icon btn-danger" 
+                                                @click="deleteProcess(process)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Management Modal -->
+            <div class="modal" v-if="showUserModal" @click="closeUserModal">
+                <div class="modal-content" @click.stop>
+                    <div class="modal-header">
+                        <h3>
+                            <i class="fas fa-users"></i>
+                            User Management
+                        </h3>
+                        <button class="btn btn-icon" @click="closeUserModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Add User Form -->
+                        <form @submit.prevent="addUser" class="add-user-form" v-if="isAdmin">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" v-model="newUser.username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="password" v-model="newUser.password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <select v-model="newUser.role" required>
+                                        <option value="user">User</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    Add User
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- User List -->
+                        <div class="user-list">
+                            <h4>Users</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th v-if="isAdmin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="user in users" :key="user.username">
+                                        <td>{{ user.username }}</td>
+                                        <td>
+                                            <span class="badge" :class="{'badge-admin': user.role === 'admin'}">
+                                                {{ user.role }}
+                                            </span>
+                                        </td>
+                                        <td v-if="isAdmin && user.username !== 'admin'">
+                                            <div class="action-buttons">
+                                                <button class="btn btn-icon btn-warning" 
+                                                        @click="showEditUser(user)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-icon btn-danger" 
+                                                        @click="deleteUser(user)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit User Modal -->
+            <div class="modal" v-if="showEditUserModal" @click="closeEditUserModal">
+                <div class="modal-content" @click.stop>
+                    <div class="modal-header">
+                        <h3>
+                            <i class="fas fa-user-edit"></i>
+                            Edit User
+                        </h3>
+                        <button class="btn btn-icon" @click="closeEditUserModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="updateUser" class="edit-user-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" :value="editingUser.username" disabled>
+                                </div>
+                                <div class="form-group">
+                                    <label>New Password (leave blank to keep current)</label>
+                                    <input type="password" v-model="editingUser.password">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <select v-model="editingUser.role" required>
+                                        <option value="user">User</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Viewer Modal -->
+            <div class="modal" v-if="showLogViewer" @click="closeLogViewer">
+                <div class="modal-content" @click.stop>
+                    <div class="modal-header">
+                        <h3>
+                            <i class="fas fa-file-alt"></i>
+                            Process Logs - {{ selectedProcess?.name }}
+                        </h3>
+                        <button class="btn btn-icon" @click="closeLogViewer">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="log-viewer">
+                            <pre>{{ processLogs }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div class="modal" v-if="showSettingsModal" @click="closeSettingsModal">
+                <div class="modal-content large-modal" @click.stop>
+                    <div class="modal-header">
+                        <h3>
+                            <i class="fas fa-cog"></i>
+                            Settings
+                        </h3>
+                        <button class="btn btn-icon" @click="closeSettingsModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="settings-tabs">
+                            <div class="tab-header">
+                                <button 
+                                    v-for="tab in ['general', 'users', 'system']" 
+                                    :key="tab"
+                                    :class="{ active: currentSettingsTab === tab }"
+                                    @click="switchTab(tab)"
+                                    class="tab-button">
+                                    <i :class="getSettingsTabIcon(tab)"></i>
+                                    {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+                                </button>
+                            </div>
+                            
+                            <!-- General Settings Tab -->
+                            <div class="tab-content" v-if="currentSettingsTab === 'general'">
+                                <h4>General Settings</h4>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Auto-Refresh Interval (seconds)</label>
+                                        <input type="number" v-model="settings.refreshInterval" min="1" max="60">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Theme</label>
+                                        <select v-model="settings.theme">
+                                            <option value="dark">Dark</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Date Format</label>
+                                        <select v-model="settings.dateFormat">
+                                            <option value="relative">Relative (e.g., 2 hours ago)</option>
+                                            <option value="absolute">Absolute (YYYY-MM-DD HH:mm)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button class="btn btn-primary" @click="saveSettings">
+                                        <i class="fas fa-save"></i>
+                                        Save Settings
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Users Tab -->
+                            <div class="tab-content" v-if="currentSettingsTab === 'users'">
+                                <!-- Reuse existing user management content -->
+                                <div class="user-list settings-user-list">
+                                    <div class="list-header">
+                                        <h4>User Management</h4>
+                                        <button class="btn btn-primary" @click="showAddUserForm = true" v-if="isAdmin">
+                                            <i class="fas fa-plus"></i>
+                                            Add User
+                                        </button>
+                                    </div>
+                                    
+                                    <form @submit.prevent="addUser" class="add-user-form" v-if="showAddUserForm && isAdmin">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label>Username</label>
+                                                <input type="text" v-model="newUser.username" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Password</label>
+                                                <input type="password" v-model="newUser.password" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Role</label>
+                                                <select v-model="newUser.role" required>
+                                                    <option value="user">User</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary">Add User</button>
+                                            <button type="button" class="btn" @click="showAddUserForm = false">Cancel</button>
+                                        </div>
+                                    </form>
+
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Role</th>
+                                                <th v-if="isAdmin">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="user in users" :key="user.username">
+                                                <td>{{ user.username }}</td>
+                                                <td>
+                                                    <span class="badge" :class="{'badge-admin': user.role === 'admin'}">
+                                                        {{ user.role }}
+                                                    </span>
+                                                </td>
+                                                <td v-if="isAdmin && user.username !== 'admin'">
+                                                    <div class="action-buttons">
+                                                        <button class="btn btn-icon btn-warning" @click="showEditUser(user)">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-icon btn-danger" @click="deleteUser(user)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- System Tab -->
+                            <div class="tab-content" v-if="currentSettingsTab === 'system'">
+                                <h4>System Information</h4>
+                                <div class="system-info">
+                                    <div class="info-grid" v-if="systemInfo">
+                                        <!-- CPU Info -->
+                                        <div class="info-item">
+                                            <i class="fas fa-microchip"></i>
+                                            <div class="info-content">
+                                                <label>CPU</label>
+                                                <div>
+                                                    <div>{{ systemInfo.cpu.model }}</div>
+                                                    <div>{{ systemInfo.cpu.cores }}</div>
+                                                    <div>Utilization: {{ systemInfo.cpu.utilization }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Memory Info -->
+                                        <div class="info-item">
+                                            <i class="fas fa-memory"></i>
+                                            <div class="info-content">
+                                                <label>Memory</label>
+                                                <div>
+                                                    <div>Total: {{ systemInfo.memory.total }}</div>
+                                                    <div>Used: {{ systemInfo.memory.used }}</div>
+                                                    <div>Free: {{ systemInfo.memory.free }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- OS Info -->
+                                        <div class="info-item">
+                                            <i class="fas fa-server"></i>
+                                            <div class="info-content">
+                                                <label>Operating System</label>
+                                                <div>
+                                                    <div>{{ systemInfo.os.distro }}</div>
+                                                    <div>{{ systemInfo.os.release }}</div>
+                                                    <div>{{ systemInfo.os.arch }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Storage Info -->
+                                        <div class="info-item">
+                                            <i class="fas fa-hdd"></i>
+                                            <div class="info-content">
+                                                <label>Storage ({{ systemInfo.storage.drive }})</label>
+                                                <div>
+                                                    <div>Total: {{ systemInfo.storage.total }}</div>
+                                                    <div>Used: {{ systemInfo.storage.used }}</div>
+                                                    <div>Free: {{ systemInfo.storage.free }}</div>
+                                                    <div>Usage: {{ systemInfo.storage.usage }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Network Info -->
+                                        <div class="info-item">
+                                            <i class="fas fa-network-wired"></i>
+                                            <div class="info-content">
+                                                <label>Network</label>
+                                                <div>
+                                                    <div>Input: {{ systemInfo.network.input }}</div>
+                                                    <div>Output: {{ systemInfo.network.output }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Uptime Info -->
+                                        <div class="info-item">
+                                            <i class="fas fa-clock"></i>
+                                            <div class="info-content">
+                                                <label>System Uptime</label>
+                                                <span>{{ systemInfo.uptime }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // New Vue instance with enhanced features
+        var vue = new Vue({
+            el: '#app',
+            data: {
+                processes: [],
+                now: 0,
+                choosedPath: '',
+                processName: '',
+                processArgs: '',
+                searchQuery: '',
+                showLogViewer: false,
+                selectedProcess: null,
+                processLogs: '',
+                isRefreshing: false,
+                showAddForm: false,
+                systemStats: null,
+                notificationQueue: [],
+                notificationClass: 'notification-info',
+                notificationIcon: 'fas fa-info-circle',
+                currentNotification: null,
+                initialLoadDone: false,
+                showUserModal: false,
+                showEditUserModal: false,
+                users: [],
+                newUser: {
+                    username: '',
+                    password: '',
+                    role: 'user'
+                },
+                editingUser: {
+                    username: '',
+                    password: '',
+                    role: ''
+                },
+                isAdmin: false,
+                currentUser: null,
+                showSettingsModal: false,
+                currentSettingsTab: 'general',
+                showAddUserForm: false,
+                systemInfo: null,
+                settings: {
+                    refreshInterval: 5,
+                    theme: 'dark',
+                    dateFormat: 'relative'
+                }
+            },
+            computed: {
+                filteredProcesses() {
+                    if (!this.searchQuery) return this.processes;
+                    const query = this.searchQuery.toLowerCase();
+                    return this.processes.filter(p => 
+                        p.name.toLowerCase().includes(query) ||
+                        p.pm2_env.status.toLowerCase().includes(query)
+                    );
+                }
+            },
+            methods: {
+                formatMemory(bytes) {
+                    const mb = bytes / (1024 * 1024);
+                    if (mb > 1024) {
+                        return (mb / 1024).toFixed(2) + ' GB';
+                    }
+                    return mb.toFixed(2) + ' MB';
+                },
+
+                formatUptime(timestamp) {
+                    if (!timestamp) return 'N/A';
+                    const seconds = Math.floor((this.now - timestamp) / 1000);
+                    const days = Math.floor(seconds / 86400);
+                    const hours = Math.floor((seconds % 86400) / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    
+                    if (days > 0) return `${days}d ${hours}h`;
+                    if (hours > 0) return `${hours}h ${minutes}m`;
+                    return `${minutes}m`;
+                },
+
+                formatCPU(cpu) {
+                    // Ensure CPU value is a number and fix to 1 decimal place
+                    return parseFloat(cpu || 0).toFixed(1);
+                },
+
+                getStatusClass(process) {
+                    if (!process || !process.pm2_env) return {};
+                    const status = process.pm2_env.status || 'unknown';
+                    return {
+                        'status-online': status === 'online',
+                        'status-stopped': status === 'stopped',
+                        'status-errored': status === 'errored' || status === 'unknown'
+                    };
+                },
+
+                getCPUClass(cpu) {
+                    const cpuValue = parseFloat(cpu || 0);
+                    if (isNaN(cpuValue)) return 'status-stopped';
+                    if (cpuValue > 80) return 'status-errored';
+                    if (cpuValue > 50) return 'status-warning';
+                    return 'status-online';
+                },
+
+                getRestartClass(restarts) {
+                    if (restarts > 10) return 'badge-danger';
+                    if (restarts > 5) return 'badge-warning';
+                    return 'badge-success';
+                },
+
+                getProcessIcon(process) {
+                    const status = process.pm2_env.status;
+                    if (status === 'online') return 'fa-circle-play text-success';
+                    if (status === 'stopped') return 'fa-circle-stop text-danger';
+                    return 'fa-circle-exclamation text-warning';
+                },
+
+                getActionButtonClass(process) {
+                    const status = process.pm2_env.status;
+                    return {
+                        'btn-success': status === 'stopped',
+                        'btn-danger': status === 'online'
+                    };
+                },
+
+                getActionIcon(process) {
+                    return process.pm2_env.status === 'online' ? 'fa-stop' : 'fa-play';
+                },
+
+                toggleProcess(process) {
+                    const action = process.pm2_env.status === 'online' ? 'stop' : 'start';
+                    window.location.href = `/${action}?id=${process.pm_id}`;
+                },
+
+                restartProcess(process) {
+                    window.location.href = `/restart?id=${process.pm_id}`;
+                },
+
+                deleteProcess(process) {
+                    if (confirm(`Are you sure you want to delete process ${process.name}?`)) {
+                        window.location.href = `/delete?id=${process.pm_id}`;
+                    }
+                },
+
+                addProcess(event) {
+                    event.preventDefault();
+                    if (!this.choosedPath) {
+                        this.showNotification('Please select a file path', 'error');
+                        return;
+                    }
+
+                    const data = {
+                        path: this.choosedPath,
+                        name: this.processName,
+                        args: this.processArgs
+                    };
+
+                    fetch('/addProccess', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            this.showNotification(result.message, 'success');
+                            this.closeAddForm();
+                            this.refreshData();
+                        } else {
+                            this.showNotification(result.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        this.showNotification('Error adding process: ' + error.message, 'error');
+                    });
+                },
+
+                async refreshData() {
+                    // Mostrar loader apenas na primeira carga
+                    if (!this.initialLoadDone) {
+                        $("#loader").stop().fadeIn(200);
+                    }
+                    
+                    try {
+                        const response = await fetch('/getProccess');
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            console.error('PM2 Error:', data);
+                            this.processes = [];
+                        } else {
+                            this.processes = Array.isArray(data) ? data : [];
+                            this.now = Date.now();
+                            await this.updateSystemStats();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching processes:', error);
+                        this.processes = [];
+                    } finally {
+                        if (!this.initialLoadDone) {
+                            $("#loader").stop().fadeOut(200);
+                            this.initialLoadDone = true;
+                        }
+                    }
+                },
+
+                async updateSystemStats() {
+                    try {
+                        const response = await fetch('/system-stats');
+                        this.systemStats = await response.json();
+                    } catch (error) {
+                        console.error('Failed to fetch system stats:', error);
+                    }
+                },
+
+                showNotification(message, type = 'success') {
+                    this.notificationClass = `notification-${type}`;
+                    this.notificationIcon = type === 'success' ? 'fas fa-check-circle' :
+                                          type === 'error' ? 'fas fa-exclamation-circle' :
+                                          'fas fa-info-circle';
+                    
+                    $("#notification")
+                        .removeClass()
+                        .addClass(`notification ${this.notificationClass}`)
+                        .find('.notification-message')
+                        .text(message);
+                    
+                    $("#notification").slideDown(300);
+                    setTimeout(() => {
+                        $("#notification").slideUp(300);
+                    }, 5000);
+                },
+
+                async viewLogs(process) {
+                    this.selectedProcess = process;
+                    this.showLogViewer = true;
+                    try {
+                        const response = await fetch(`/log?id=${process.pm_id}`);
+                        const data = await response.text();
+                        this.processLogs = data;
+                    } catch (error) {
+                        this.showNotification('Error fetching logs', 'error');
+                    }
+                },
+
+                closeLogViewer() {
+                    this.showLogViewer = false;
+                    this.selectedProcess = null;
+                    this.processLogs = '';
+                },
+
+                closeAddForm() {
+                    this.showAddForm = false;
+                    $("#addForm").slideUp(300);
+                },
+
+                showUserManagement() {
+                    this.loadUsers();
+                    this.showUserModal = true;
+                },
+                closeUserModal() {
+                    this.showUserModal = false;
+                    this.newUser = { username: '', password: '', role: 'user' };
+                },
+                closeEditUserModal() {
+                    this.showEditUserModal = false;
+                    this.editingUser = { username: '', password: '', role: '' };
+                },
+                async loadUsers() {
+                    try {
+                        const response = await fetch('/api/users');
+                        if (response.ok) {
+                            this.users = await response.json();
+                        }
+                    } catch (error) {
+                        this.showNotification('Error loading users: ' + error.message, 'error');
+                    }
+                },
+                async addUser() {
+                    try {
+                        const response = await fetch('/api/users', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.newUser)
+                        });
+
+                        const result = await response.json();
+                        if (response.ok) {
+                            this.showNotification('User added successfully', 'success');
+                            this.loadUsers();
+                            this.newUser = { username: '', password: '', role: 'user' };
+                        } else {
+                            this.showNotification(result.error, 'error');
+                        }
+                    } catch (error) {
+                        this.showNotification('Error adding user: ' + error.message, 'error');
+                    }
+                },
+                showEditUser(user) {
+                    this.editingUser = { ...user, password: '' };
+                    this.showEditUserModal = true;
+                },
+                async updateUser() {
+                    try {
+                        const response = await fetch(`/api/users/${this.editingUser.username}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                password: this.editingUser.password,
+                                role: this.editingUser.role
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (response.ok) {
+                            this.showNotification('User updated successfully', 'success');
+                            this.loadUsers();
+                            this.closeEditUserModal();
+                        } else {
+                            this.showNotification(result.error, 'error');
+                        }
+                    } catch (error) {
+                        this.showNotification('Error updating user: ' + error.message, 'error');
+                    }
+                },
+                async deleteUser(user) {
+                    if (!confirm(`Are you sure you want to delete user ${user.username}?`)) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/users/${user.username}`, {
+                            method: 'DELETE'
+                        });
+
+                        const result = await response.json();
+                        if (response.ok) {
+                            this.showNotification('User deleted successfully', 'success');
+                            this.loadUsers();
+                        } else {
+                            this.showNotification(result.error, 'error');
+                        }
+                    } catch (error) {
+                        this.showNotification('Error deleting user: ' + error.message, 'error');
+                    }
+                },
+                checkAdminStatus() {
+                    fetch('/api/users')
+                        .then(response => {
+                            this.isAdmin = response.ok;
+                        })
+                        .catch(() => {
+                            this.isAdmin = false;
+                        });
+                },
+                async loadCurrentUser() {
+                    try {
+                        const response = await fetch('/api/current-user');
+                        if (response.ok) {
+                            this.currentUser = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error loading current user:', error);
+                    }
+                },
+                async loadSystemInfo() {
+                    try {
+                        const response = await fetch('/api/system-info');
+                        if (response.ok) {
+                            this.systemInfo = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error loading system info:', error);
+                    }
+                },
+
+                showSettings() {
+                    this.showSettingsModal = true;
+                    if (this.currentSettingsTab === 'system') {
+                        this.loadSystemInfo();
+                    }
+                },
+                
+                closeSettingsModal() {
+                    this.showSettingsModal = false;
+                    this.currentSettingsTab = 'general';
+                },
+                
+                getSettingsTabIcon(tab) {
+                    const icons = {
+                        general: 'fas fa-sliders-h',
+                        users: 'fas fa-users',
+                        system: 'fas fa-server'
+                    };
+                    return icons[tab] || 'fas fa-cog';
+                },
+
+                switchTab(tab) {
+                    this.currentSettingsTab = tab;
+                    if (tab === 'system') {
+                        this.loadSystemInfo();
+                    }
+                },
+
+                loadSettings() {
+                    const savedSettings = localStorage.getItem('pm2panel_settings');
+                    if (savedSettings) {
+                        this.settings = { ...this.settings, ...JSON.parse(savedSettings) };
+                        this.applySettings();
+                    }
+                },
+
+                saveSettings() {
+                    localStorage.setItem('pm2panel_settings', JSON.stringify(this.settings));
+                    this.applySettings();
+                    this.showNotification('Settings saved successfully', 'success');
+                },
+
+                applySettings() {
+                    // Apply theme
+                    document.body.className = this.settings.theme;
+                    
+                    // Update refresh interval
+                    if (this.refreshInterval) {
+                        clearInterval(this.refreshInterval);
+                    }
+                    this.refreshInterval = setInterval(this.refreshData, this.settings.refreshInterval * 1000);
+                }
+            },
+            mounted() {
+                this.loadSettings();
+                this.refreshData();
+                this.checkAdminStatus();
+                this.loadCurrentUser();
+            }
+        });
+
+        // Initialize jQuery event handlers
+        $(function() {
+            $("#frmCrtl").click(() => {
+                vue.showAddForm = !vue.showAddForm;
+                $("#addForm").slideToggle(300);
+            });
+
+            $(".notification-close").click(() => {
+                $("#notification").slideUp(300);
+            });
+        });
+    </script>
+</body>
+</html>

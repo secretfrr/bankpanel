@@ -1,0 +1,33 @@
+{
+  "name": "fluxpanel",
+  "version": "1.0.0",
+  "description": "FluxPanel - A web-based process control panel for PM2",
+  "main": "fluxmain.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pm2",
+    "process",
+    "control",
+    "panel",
+    "web",
+    "ui"
+  ],
+  "author": "Esther",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.2",
+    "child_process": "^1.0.2",
+    "dotenv": "^16.5.0",
+    "express": "^4.16.2",
+    "express-session": "^1.15.6",
+    "fs": "0.0.1-security",
+    "lowdb": "^1.0.0",
+    "node-cron": "^4.0.5",
+    "os-utils": "^0.0.14",
+    "path": "^0.12.7",
+    "systeminformation": "^5.25.11"
+  }
+}

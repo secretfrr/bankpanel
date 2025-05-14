@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flux Panel | Initial Setup</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-color: #0e0e10;
+      --card-bg: #1a1a1d;
+      --border-color: #2c2c2e;
+      --text-color: #ffffff;
+      --subtle-text: #999999;
+      --input-bg: #111113;
+      --error-bg: #b00020;
+      --accent: rgba(255, 255, 255, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card {
+      background-color: var(--card-bg);
+      padding: 32px;
+      border-radius: 10px;
+      box-shadow: 0 0 0 1px var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .login-header h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .login-header p {
+      font-size: 0.9rem;
+      color: var(--subtle-text);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--subtle-text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-group input {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--text-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    .error-message {
+      background-color: var(--error-bg);
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .button-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .login-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--accent);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .login-button:hover {
+      background: rgba(255, 255, 255, 0.25);
+      color: #000;
+    }
+
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 24px;
+      }
+
+      .login-button {
+        width: 100%;
+      }
+
+      .button-wrapper {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h2><i class="fas fa-user-shield"></i>Initial Setup</h2>
+        <p>Create your admin account</p>
+      </div>
+      <form action="/setup" method="post" class="login-form">
+        <div class="form-group">
+          <label for="username">
+            <i class="fas fa-user"></i> Admin Username
+          </label>
+          <input type="text" id="username" name="username" required autofocus />
+        </div>
+
+        <div class="form-group">
+          <label for="password">
+            <i class="fas fa-lock"></i> Admin Password
+          </label>
+          <input type="password" id="password" name="password" required />
+        </div>
+
+        <div id="error-message" class="error-message" style="display: none;">
+          Invalid admin credentials
+        </div>
+
+        <div class="button-wrapper">
+          <button type="submit" class="login-button">
+            <i class="fas fa-check-circle"></i> Create Admin Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('err')) {
+      const errorMessage = document.getElementById('error-message');
+      errorMessage.style.display = 'block';
+      errorMessage.textContent = urlParams.get('err').replace(/_/g, ' ');
+    }
+  </script>
+</body>
+</html>
