@@ -1,4 +1,4 @@
-# Flux Panel - Modern PM2 Process Manager
+# banks Panel - Modern PM2 Process Manager
 
 A modern, web-based process manager for PM2. It provides an elegant and user-friendly interface to manage your PM2 processes, monitor system resources, and handle user access control.
 
@@ -37,8 +37,8 @@ A modern, web-based process manager for PM2. It provides an elegant and user-fri
 
 1. Clone the repository:
 ```bash
-https://github.com/SterTheStar/fluxpanel.git
-cd fluxpanel
+https://github.com/secretfrr/bankpanel.git
+cd bankpanel
 ```
 
 2. Install dependencies:
@@ -145,7 +145,7 @@ Please consider visiting their repository and supporting their project!
 
 ## 💖 Support
 
-If you like this project and find it useful, consider supporting it with a donation on [Ko-Fi](https://ko-fi.com/venusbr). Every little bit helps and is greatly appreciated!
+If you like this project and find it useful, consider supporting it with a donation on [Ko-Fi](https://ko-fi.com/bankdrawz). Every little bit helps and is greatly appreciated!
 
 ## 📄 License
 
@@ -153,4 +153,4 @@ This project is licensed under the GNU General Public v3.0 License
 
 ---
 
-Made with ❤️ by [Esther (Vênus)](https://x.com/onlysterbr)
+Made with ❤️ by [Miguel (bankdrawz)](https://x.com/bankdrawz)
