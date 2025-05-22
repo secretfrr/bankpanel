@@ -1,8 +1,8 @@
 {
-  "name": "fluxpanel",
+  "name": "bankpanel",
   "version": "1.0.0",
-  "description": "FluxPanel - A web-based process control panel for PM2",
-  "main": "fluxmain.js",
+  "description": "BankPanel - A web-based process control panel for PM2",
+  "main": "bankmain.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,7 +14,7 @@
     "web",
     "ui"
   ],
-  "author": "Esther",
+  "author": "bankdrawz",
   "license": "GPL-3.0",
   "dependencies": {
     "bcryptjs": "^2.4.3",
