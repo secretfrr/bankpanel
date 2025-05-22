@@ -55,7 +55,7 @@ SESSION_AGE=600000  # 10 minutes in milliseconds
 
 4. Start the application:
 ```bash
-node fluxmain.js
+node bankmain.js
 ```
 
 The panel will be available at `http://localhost:3001`
