@@ -592,7 +592,7 @@ app.get('/api/current-user', requireAuth, (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`
-  🚀 Flux Panel is running on:
+  🚀 Bank Panel is running on:
      ➤ Local:   http://localhost:${PORT}
      ➤ PM2:     Listening on port ${PORT}
     `);
